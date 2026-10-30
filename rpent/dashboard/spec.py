@@ -24,7 +24,7 @@ class TaskFieldSpecRequired(TypedDict):
 
 
 class TaskFieldSpec(TaskFieldSpecRequired, total=False):
-    kind: Literal["integer"]
+    kind: Literal["integer", "text"]
     minimum: int
     choices: tuple[str, ...]
     suggestions: tuple[str, ...]
@@ -56,5 +56,8 @@ class DashboardSpecRequired(TypedDict):
 
 class DashboardSpec(DashboardSpecRequired, total=False):
     external_env: bool
+    # External robot control may use a robot-specific transport instead of the
+    # generic --env-endpoint RPC flag.
+    requires_env_endpoint: bool
     # A message directs the operator elsewhere; None requests guarded continuation.
     operator_commands: dict[str, str | None]

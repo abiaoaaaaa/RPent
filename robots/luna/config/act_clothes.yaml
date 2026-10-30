@@ -1,0 +1,20 @@
+base_config: act_22_base.yaml
+
+policy:
+  # Latest complete checkpoint currently available; replace with 100000 when it
+  # is written and validated by the training job.
+  path: /home/xlb/data/models/act_grab_clothes_head_wrists_v2/train_20261028_100k/checkpoints/040000/pretrained_model
+
+dataset:
+  root: /home/xlb/data/Data/lerobot/grab_clothes_head_wrists_v2
+  single_task: grab the clothes
+
+robot:
+  # This checkpoint predicts the complete 22-D Luna contract, including both
+  # arms and six body joints.  The right gripper is the trained closing side;
+  # the left gripper remains open in the recorded demonstrations.
+  safety_stats_path: /home/xlb/data/Data/lerobot/grab_clothes_head_wrists_v2
+
+inference:
+  n_action_steps: 30
+  chunk_interval_s: 1.0

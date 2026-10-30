@@ -1,0 +1,88 @@
+# One Luna pi0.5 checkpoint serves all three color prompts.
+base_config: ../../../../../lerobot_vlahost/workflows/robot_interaction/deploy_config_openpi.yaml
+
+policy:
+  path: /home/xlb/data/models/pi05_luna_stack_blocks_rgb_v4_joint22_tplus2/149999
+  device: cuda
+
+openpi:
+  config_name: pi05_luna_stack_blocks_rgb_v4_joint22_tplus2
+  asset_id: stack_blocks_rgb_v4_joint22_tplus2
+  action_mode: joint
+  physical_action_dim: 22
+  gripper_min: 0.0
+  gripper_max: 1.0
+
+dataset:
+  root: /home/xlb/data/Data/lerobot/stack_blocks_rgb_v4_joint22_tplus2
+  repo_id: local/rollout_pi05_luna_stack_blocks_rgb_v4_joint22_tplus2
+  # RPent overrides this with the exact red/yellow/blue training prompt.
+  single_task: "Pick up the red block."
+
+robot:
+  type: luna_http
+  id: luna_pi05_rgb
+  http_base_url: http://6.6.7.100:8011
+  safety_stats_path: /home/xlb/data/Data/lerobot/stack_blocks_rgb_v4_joint22_tplus2
+  action_clip_margin_rad: 0.02
+  max_relative_target_rad: 0.05
+  joint_names:
+    - Arm_L1_Joint
+    - Arm_L2_Joint
+    - Arm_L3_Joint
+    - Arm_L4_Joint
+    - Arm_L5_Joint
+    - Arm_L6_Joint
+    - Arm_L7_Joint
+    - Arm_R1_Joint
+    - Arm_R2_Joint
+    - Arm_R3_Joint
+    - Arm_R4_Joint
+    - Arm_R5_Joint
+    - Arm_R6_Joint
+    - Arm_R7_Joint
+    - Leg_J1_Joint
+    - Leg_J2_Joint
+    - Leg_J3_Joint
+    - Leg_J4_Joint
+    - Leg_J5_Joint
+    - Leg_J6_Joint
+    - gripper_L
+    - gripper_R
+
+intervention:
+  enabled: false
+  required: false
+
+recording:
+  enabled: false
+
+# Persist every inferred and dispatched 22-D chunk without opening a GUI.
+action_state_monitor:
+  enabled: true
+  show_window: false
+  log_every_chunk: true
+  output_dir: /home/xlb/data/logs/luna_pi05_rollouts
+  max_file_mb: 256
+  history_chunks: 120
+  thresholds:
+    state_to_first_joint_rad: 0.08
+    within_chunk_joint_rad: 0.05
+    chunk_boundary_joint_rad: 0.08
+    # A normal Pi0.5 close transition starts about 0.35--0.45 away from the
+    # measured open gripper. This is diagnostics only; Luna's action bounds
+    # and VLAHost clamps remain authoritative.
+    gripper_abs: 0.50
+
+inference:
+  type: chunk
+  strategy: base
+  fps: 30.0
+  n_action_steps: 30
+  chunk_interval_s: 1.0
+  # The first JAX inference takes several seconds. Discard one warmup result so
+  # it cannot be replaced immediately after only a few physical steps.
+  warmup_inferences: 1
+  duration: 15.0
+  return_to_initial_position: false
+  show_cameras: false

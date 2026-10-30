@@ -14,8 +14,12 @@
 
 from __future__ import annotations
 
+import base64
+import io
+import json
 import threading
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -56,6 +60,36 @@ def _server(state: DashboardState, **kwargs: Any) -> DashboardServer:
 
 def _client(server: DashboardServer) -> TestClient:
     return TestClient(server._app)
+
+
+def test_live_camera_frame_proxies_vlahost_snapshot(state):
+    jpeg = b"\xff\xd8live-camera\xff\xd9"
+    payload = json.dumps(
+        {"jpeg_base64": base64.b64encode(jpeg).decode("ascii")}
+    ).encode("utf-8")
+
+    class SnapshotResponse:
+        def __enter__(self):
+            return io.BytesIO(payload)
+
+        def __exit__(self, *_args):
+            return False
+
+    server = _server(
+        state,
+        live_camera_snapshot_url="http://robot:8011/hil/snapshot",
+    )
+    server._live_camera_opener = SimpleNamespace(
+        open=lambda *_args, **_kwargs: SnapshotResponse()
+    )
+    client = _client(server)
+
+    response = client.get("/api/live-camera-frame")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/jpeg"
+    assert response.content == jpeg
+    assert client.get("/api/session/config").json()["live_cameras"] is True
 
 
 def test_model_change_applies_at_next_task_boundary(state):

@@ -181,6 +181,27 @@ def test_finish_returns_transcript_for_rpent_without_step_files(tmp_path, monkey
     ]
 
 
+def test_noninteractive_text_only_response_retries_until_finish(tmp_path):
+    requests = []
+
+    async def stream(messages, info):
+        requests.append(copy.deepcopy(messages))
+        if len(requests) == 1:
+            # A progress statement must not terminate a physical run.
+            yield "I will navigate to the source first."
+        else:
+            yield finish()
+
+    result, toolkit, _ = solve(
+        tmp_path, FunctionModel(stream_function=stream), max_turns=2
+    )
+    assert result.error is None
+    assert result.finish_result == {"_finish": True, **FINISH_ARGS}
+    assert result.stats["turns_used"] == 2
+    assert toolkit.calls == [("finish", FINISH_ARGS)]
+    assert "I will navigate to the source first." in json.dumps(result.messages)
+
+
 def test_refused_finish_retries_without_claiming_success(tmp_path):
     events = Events()
     toolkit = RobotToolkit(events)

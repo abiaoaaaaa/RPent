@@ -131,12 +131,23 @@ def _parse_task(task_spec: TaskSpec, text: str) -> TaskRequest | None:
         return None
 
     fields = task_spec["fields"]
-    if len(tokens) != len(fields) + 1:
-        raise ValueError(f"expected {task_spec['usage']}")
-
     request: TaskRequest = {}
-    for field, raw in zip(fields, tokens[1:], strict=True):
+    position = 1
+    for index, field in enumerate(fields):
         name = field["name"]
+        if field.get("kind") == "text":
+            if index != len(fields) - 1:
+                raise ValueError("text task fields must be last")
+            raw = " ".join(tokens[position:]).strip()
+            if not raw:
+                raise ValueError(f"expected {task_spec['usage']}")
+            request[name] = raw
+            position = len(tokens)
+            continue
+        if position >= len(tokens):
+            raise ValueError(f"expected {task_spec['usage']}")
+        raw = tokens[position]
+        position += 1
         choices = field.get("choices", ())
         if choices and raw not in choices:
             raise ValueError(f"unsupported {name}: {raw}")
@@ -150,6 +161,8 @@ def _parse_task(task_spec: TaskSpec, text: str) -> TaskRequest | None:
         if minimum is not None and value < minimum:
             raise ValueError(f"{name} must be at least {minimum}, got {value}")
         request[name] = value
+    if position != len(tokens):
+        raise ValueError(f"expected {task_spec['usage']}")
     return request
 
 
@@ -592,11 +605,20 @@ class DashboardState:
                     "Dashboard Session is still starting shared services"
                 )
 
+            active = self._task_state in {"starting", "running"}
+            if active and self._current_task == request:
+                # A repeated Enter/click must not queue a second physical task
+                # that starts automatically after the first one finishes.
+                self._control_feedback.append(
+                    "identical active task ignored; wait until the current task is idle before rerunning it"
+                )
+                self._interaction_changed_locked()
+                return
+
             self._pending_task = dict(request)
             self._control_error = None
             self._control_feedback = []
 
-            active = self._task_state in {"starting", "running"}
             if active:
                 self._session_state = "switch_pending"
                 self._accepting_input = False

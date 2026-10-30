@@ -1,0 +1,39 @@
+schema_version: 1
+measurement: T_tag_left_tool
+calibration_file: /home/liuqian/WBC/Apex_Deploy/calibration_data/luna_left_extrinsic02_home_20261009_verified.yaml
+intrinsics_file: /home/liuqian/WBC/Apex_Deploy/calibration_data/left_d405_intrinsics.yaml
+samples: 30
+quality:
+  position_rms_mm: 1.4016730213885236
+  position_max_mm: 2.7962204777571062
+  angle_rms_deg: 0.903430472785393
+  angle_max_deg: 1.7438240684030473
+  reprojection_mean_px: 0.398125703086367
+  reprojection_max_px: 0.46294862545725585
+tag_eef_quaternion_xyzw:
+- -0.4813005637830591
+- -0.028205425216362046
+- 0.8758311629538673
+- 0.02177143287314479
+measurement_snapshot:
+  base_tag_xyz_m:
+  - 0.4421238052614706
+  - 0.17372107073055343
+  - 0.8946752792485495
+  base_left_tool_xyz_m:
+  - 0.38198180846509444
+  - 0.20320731986123047
+  - 0.9680559469447545
+/**:
+  ros__parameters:
+    tool_frame: left_tool
+    tag_id: 3
+    tag_size: 0.016
+    tag_eef_offset_m:
+    - 0.0538473886429602
+    - 0.0023168196690978786
+    - 0.08315890458398222
+    tag_eef_rpy_deg:
+    - -7.491077188701358
+    - 57.335772940734
+    - 173.05218303816906

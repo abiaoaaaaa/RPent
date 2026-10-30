@@ -1,0 +1,8 @@
+base_config: act_22_base.yaml
+policy:
+  path: /home/xlb/data/models/act_luna_arm16_tplus2/red_100000
+dataset:
+  root: /home/xlb/data/Data/lerobot/stack_blocks_rgb_v4_arm16_tplus2
+  single_task: grasp the red block
+robot:
+  safety_stats_path: /home/xlb/data/Data/lerobot/stack_blocks_rgb_v4_arm16_tplus2

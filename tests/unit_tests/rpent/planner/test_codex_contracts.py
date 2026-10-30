@@ -203,7 +203,16 @@ def test_config_overrides_normalize_provider_url(
     assert _codex_mcp_config_overrides(
         mcp_url="http://fake.invalid/mcp/",
         base_url=None,
-    ) == ['mcp_servers.rpent.url="http://fake.invalid/mcp/"']
+    ) == [
+        'mcp_servers.rpent.url="http://fake.invalid/mcp/"',
+        'mcp_servers.rpent.enabled=true',
+        'mcp_servers.rpent.required=true',
+        'plugins."unified-computer-use@openai-bundled".enabled=false',
+        'mcp_servers.cua_repl.url="http://127.0.0.1:1/mcp/"',
+        'mcp_servers.cua_repl.enabled=false',
+        'mcp_servers.node_repl.command="false"',
+        'mcp_servers.node_repl.enabled=false',
+    ]
 
     overrides = _codex_mcp_config_overrides(
         mcp_url="http://fake.invalid/mcp/",
@@ -212,6 +221,13 @@ def test_config_overrides_normalize_provider_url(
 
     assert overrides == [
         'mcp_servers.rpent.url="http://fake.invalid/mcp/"',
+        'mcp_servers.rpent.enabled=true',
+        'mcp_servers.rpent.required=true',
+        'plugins."unified-computer-use@openai-bundled".enabled=false',
+        'mcp_servers.cua_repl.url="http://127.0.0.1:1/mcp/"',
+        'mcp_servers.cua_repl.enabled=false',
+        'mcp_servers.node_repl.command="false"',
+        'mcp_servers.node_repl.enabled=false',
         f'model_provider="{PROVIDER_ID}"',
         f'model_providers.{PROVIDER_ID}.name="{PROVIDER_ID}"',
         f'model_providers.{PROVIDER_ID}.base_url="https://provider.invalid/root/v1"',
@@ -476,6 +492,28 @@ def _model_response_events(index: int, *, text: bool = False, finish: bool = Fal
     }
     yield usage
     yield usage  # A repeated SDK notification is not another model response.
+
+
+def test_english_reasoning_summary_is_replaced_by_chinese_visible_summary():
+    sink = RecordingSink()
+    recorder = codex_module._Recorder(max_turns=2, dashboard_events=sink)
+
+    rendered = recorder.observe(
+        {
+            "method": "item/completed",
+            "payload": {
+                "item": {
+                    "type": "reasoning",
+                    "summary": ["We need to inspect the scene before moving."],
+                }
+            },
+        }
+    )
+
+    assert "We need" not in rendered
+    assert "正在评估最近观察和工具结果" in rendered
+    assert sink.events[-1].payload["type"] == "thinking"
+    assert "正在评估最近观察和工具结果" in sink.events[-1].payload["text"]
 
 
 def test_cli_interrupts_once_at_tool_only_response_budget(tmp_path, monkeypatch):

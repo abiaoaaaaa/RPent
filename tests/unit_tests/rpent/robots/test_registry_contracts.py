@@ -33,6 +33,7 @@ EXPECTED_ROBOTS = (
     "dual_franka",
     "franka",
     "libero",
+    "luna",
     "robocasa",
     "robodojo",
     "robotwin",
@@ -40,6 +41,10 @@ EXPECTED_ROBOTS = (
 )
 
 PROMPT_VARIABLES = {
+    "luna": {
+        "instruction": "Move the tagged optical module from table_3 to chair_1",
+        "destination": "chair_1",
+    },
     "yam": {
         "task_name": "tabletop_cleanup_a",
         "seed": 0,

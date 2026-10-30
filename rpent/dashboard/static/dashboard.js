@@ -114,7 +114,8 @@ const COPY = {
     awaitingTask: (usage) => `Waiting for ${usage}`,
     actionReplayTitle: "Click to replay this action",
     episodeReplayTitle: "Click to replay the full episode",
-    thinking: (count) => `thinking · ${count.toLocaleString()} chars`,
+    verificationEvidence: "Verification snapshot",
+    thinking: (count) => `reasoning summary · ${count.toLocaleString()} chars`,
     toolCalls: "tool calls",
     eventCount: (count) => `${count} events`,
     actionCaption: (step, action) => `action #${step} ${action}`,
@@ -221,7 +222,8 @@ const COPY = {
     awaitingTask: (usage) => `等待 ${usage}`,
     actionReplayTitle: "点击回放该动作",
     episodeReplayTitle: "点击回放完整过程",
-    thinking: (count) => `思考 · ${count.toLocaleString()} 字符`,
+    verificationEvidence: "验证现场截图",
+    thinking: (count) => `中文推理摘要 · ${count.toLocaleString()} 字符`,
     toolCalls: "次工具调用",
     eventCount: (count) => `${count} 条事件`,
     actionCaption: (step, action) => `动作 #${step} ${action}`,
@@ -366,6 +368,13 @@ const mediaState = {
   swapQueue: [],
   swapInFlight: false,
   generation: 0,
+};
+
+const liveCameraState = {
+  enabled: false,
+  timer: null,
+  inFlight: false,
+  failures: 0,
 };
 
 const primitiveState = {
@@ -965,6 +974,31 @@ function makeToolEl(ev) {
     const isErr = ev.result && ev.result.is_error;
     div.innerHTML = `← <span class="tname ${isErr ? "err" : ""}">${ev.tool}</span> <span class="args"></span>`;
     div.querySelector(".args").textContent = fmtArgs(ev.result);
+    if (
+      ev.result
+      && (
+        ev.result.success === true
+        || ev.result.arrival_ok === true
+        || ev.result.workflow_success === true
+        || ev.result.verdict === "held"
+      )
+    ) {
+      div.classList.add("tool-success");
+    }
+    if (ev.result && ev.result.dashboard_image_kind) {
+      const figure = document.createElement("figure");
+      figure.className = "tool-evidence";
+      const image = document.createElement("img");
+      image.alt = copy.verificationEvidence;
+      image.src = (
+        `/api/session/frame?kind=${encodeURIComponent(ev.result.dashboard_image_kind)}`
+        + `&t=${Date.now()}`
+      );
+      const caption = document.createElement("figcaption");
+      caption.textContent = copy.verificationEvidence;
+      figure.append(image, caption);
+      div.appendChild(figure);
+    }
   }
   return div;
 }
@@ -980,6 +1014,7 @@ function makeThinkingEl(ev) {
   pre.textContent = text;
   details.appendChild(summary);
   details.appendChild(pre);
+  details.open = true;
   div.appendChild(details);
   return div;
 }
@@ -992,7 +1027,7 @@ function appendEvents(events, animateNew = false) {
       // collapse consecutive tool calls/results into one foldable group
       if (!transcriptState.toolGroup) {
         const g = document.createElement("div");
-        g.className = "toolgroup";
+        g.className = "toolgroup open";
         g.dataset.toolCalls = "0";
         if (animateNew) g.classList.add("entering");
         g.innerHTML = `<div class="tg-head"><span class="tg-count">0</span> ${copy.toolCalls}</div><div class="tg-body"></div>`;
@@ -1014,6 +1049,9 @@ function appendEvents(events, animateNew = false) {
         box.appendChild(thinking);
       } else if (ev.type === "text") {
         const text = makeAssistantTextElement(ev.text);
+        if (String(ev.text || "").trimStart().startsWith("阶段验证成功：")) {
+          text.classList.add("stage-success");
+        }
         if (animateNew) text.classList.add("entering");
         box.appendChild(text);
       } else {
@@ -1197,10 +1235,86 @@ function applySessionSnapshot(snapshot) {
   renderRuntimeStatus(snapshot.runtime);
   syncPrimitiveAvailability(snapshot);
   interactionController.applySnapshot(snapshot);
-  updateFrameAvailability(snapshot.frame_available);
+  updateFrameAvailability(Object.fromEntries(Object.entries(snapshot.frame_available || {})
+    .filter(([kind]) => !kind.startsWith("luna_camera_"))));
+  refreshLunaCameraViews(snapshot.frame_available);
   if (snapshot.usage) $("#usageMeta").textContent = copy.usage(snapshot.usage);
   refreshTranscriptIfChanged(snapshot);
   return generationState;
+}
+
+function refreshLunaCameraViews(available) {
+  if (liveCameraState.enabled) {
+    startLunaCameraPolling();
+    return;
+  }
+  const views = [
+    ["luna_camera_top", "#lunaCameraTop"],
+    ["luna_camera_left_wrist", "#lunaCameraLeft"],
+    ["luna_camera_right_wrist", "#lunaCameraRight"],
+  ];
+  const panel = $("#lunaCameraPanel");
+  const ready = views.every(([kind]) => Object.hasOwn(available || {}, kind));
+  panel.hidden = !ready;
+  if (!ready) return;
+  for (const [kind, selector] of views) {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = $(selector);
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      canvas.getContext("2d").drawImage(image, 0, 0);
+    };
+    image.src = `/api/session/frame?kind=${encodeURIComponent(kind)}&t=${Date.now()}`;
+  }
+}
+
+function startLunaCameraPolling() {
+  if (!liveCameraState.enabled) return;
+  $("#lunaCameraPanel").hidden = false;
+  if (liveCameraState.timer !== null) return;
+  const tick = async () => {
+    await refreshLiveLunaCameras();
+    if (!liveCameraState.enabled) return;
+    const delay = Math.min(
+      3000,
+      250 * Math.max(1, liveCameraState.failures + 1),
+    );
+    liveCameraState.timer = window.setTimeout(tick, delay);
+  };
+  liveCameraState.timer = 0;
+  tick();
+}
+
+async function refreshLiveLunaCameras() {
+  if (!liveCameraState.enabled || liveCameraState.inFlight) return;
+  liveCameraState.inFlight = true;
+  try {
+    const response = await fetch(`/api/live-camera-frame?t=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error(`live camera HTTP ${response.status}`);
+    const bitmap = await createImageBitmap(await response.blob());
+    const views = [
+      ["#lunaCameraTop", 0, 0, 1280, 960],
+      ["#lunaCameraLeft", 0, 960, 640, 480],
+      ["#lunaCameraRight", 640, 960, 640, 480],
+    ];
+    for (const [selector, sx, sy, width, height] of views) {
+      const canvas = $(selector);
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
+      canvas.getContext("2d").drawImage(
+        bitmap, sx, sy, width, height, 0, 0, width, height,
+      );
+    }
+    bitmap.close();
+    liveCameraState.failures = 0;
+  } catch (_error) {
+    liveCameraState.failures += 1;
+  } finally {
+    liveCameraState.inFlight = false;
+  }
 }
 
 async function refreshMeta() {
@@ -1336,6 +1450,7 @@ async function boot() {
     ]);
     configureDashboardSpec(dashboardSpec);
     renderPlannerConfig(sessionConfig);
+    liveCameraState.enabled = Boolean(sessionConfig.live_cameras);
     interactionController.configureTaskCommand(dashboardSpec.task);
     connectSession();
   } catch (error) {

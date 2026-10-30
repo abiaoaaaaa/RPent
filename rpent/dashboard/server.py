@@ -24,11 +24,15 @@ Routes mirror the fixed frontend contract in ``rpent/dashboard/index.html``.
 from __future__ import annotations
 
 import asyncio
+import base64
+import binascii
 import json
 import threading
 import time
 from pathlib import Path
 from typing import Any
+from urllib.request import ProxyHandler, build_opener
+from urllib.request import Request as UrlRequest
 
 import uvicorn
 from fastapi import Body, FastAPI
@@ -70,6 +74,7 @@ class DashboardServer:
         planner: str | None = None,
         model: str | None = None,
         base_url: str | None = None,
+        live_camera_snapshot_url: str | None = None,
     ) -> None:
         self.host = host
         self.port = int(port)
@@ -79,6 +84,9 @@ class DashboardServer:
         # short timeouts; the run's is never reused.
         self._llm_check_base_url = base_url
         self._llm_check_lock = threading.Lock()
+        self._live_camera_snapshot_url = live_camera_snapshot_url
+        self._live_camera_opener = build_opener(ProxyHandler({}))
+        self._live_camera_warning_at = 0.0
         dashboard_dir = Path(__file__).parent
         self._language = "zh-cn" if language == "zh-cn" else "en"
         self._index_html = (dashboard_dir / "index.html").read_text(encoding="utf-8")
@@ -131,7 +139,12 @@ class DashboardServer:
 
         @app.get("/api/session/config")
         def api_session_config() -> JSONResponse:
-            return JSONResponse(self._planner_config)
+            return JSONResponse(
+                {
+                    **self._planner_config,
+                    "live_cameras": bool(self._live_camera_snapshot_url),
+                }
+            )
 
         @app.post("/api/session/config")
         def api_update_session_config(
@@ -298,6 +311,37 @@ class DashboardServer:
             if frame is None:
                 return Response(status_code=404)
             return Response(frame, media_type="image/png")
+
+        @app.get("/api/live-camera-frame")
+        def api_live_camera_frame() -> Response:
+            if not self._live_camera_snapshot_url:
+                return Response(status_code=404)
+            try:
+                request = UrlRequest(
+                    self._live_camera_snapshot_url,
+                    headers={"Accept": "application/json", "Cache-Control": "no-cache"},
+                )
+                with self._live_camera_opener.open(request, timeout=2.5) as response:
+                    payload = json.load(response)
+                encoded = payload.get("jpeg_base64")
+                if not isinstance(encoded, str) or not encoded:
+                    raise ValueError("VLAHost snapshot has no JPEG")
+                frame = base64.b64decode(encoded, validate=True)
+                if not frame.startswith(b"\xff\xd8") or len(frame) > 10_000_000:
+                    raise ValueError("VLAHost snapshot is not a bounded JPEG")
+            except (OSError, ValueError, binascii.Error, json.JSONDecodeError) as exc:
+                now = time.monotonic()
+                if now - self._live_camera_warning_at >= 5.0:
+                    logger.warning("live camera fetch failed: %s", exc)
+                    self._live_camera_warning_at = now
+                return JSONResponse(
+                    {"error": "live camera unavailable"}, status_code=502
+                )
+            return Response(
+                frame,
+                media_type="image/jpeg",
+                headers={"Cache-Control": "no-store, max-age=0"},
+            )
 
         @app.get("/api/session/video")
         def api_video() -> Response:

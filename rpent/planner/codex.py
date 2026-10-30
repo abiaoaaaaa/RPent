@@ -726,11 +726,21 @@ class _Recorder:
 
         if item_type == "reasoning":
             text = _extract_text(_get(item, "summary") or _get(item, "content"))
-            if text:
+            if text and _contains_chinese(text):
                 self.dashboard_events.emit(
                     TranscriptEvent({"type": "thinking", "text": text})
                 )
-            return f"[codex-reasoning] {text}\n" if text else ""
+                return f"[codex-reasoning] {text}\n"
+            if text:
+                summary = (
+                    "正在评估最近观察和工具结果；"
+                    "下面将用中文列出观察、判断、计划、风险和验证门槛。"
+                )
+                self.dashboard_events.emit(
+                    TranscriptEvent({"type": "thinking", "text": summary})
+                )
+                return f"[codex-reasoning] {summary}\n"
+            return ""
 
         if _is_tool_item(item):
             self.tool_calls += 1
@@ -1024,6 +1034,22 @@ def _codex_mcp_config_overrides(
     config: list[tuple[str, Any]] = []
     if mcp_url:
         config.append(("mcp_servers.rpent.url", mcp_url))
+        # A user-level Codex config may have disabled a previously named
+        # server.  Robot runs require this per-run control surface.
+        config.append(("mcp_servers.rpent.enabled", True))
+        # Robot runs must fail at startup if their registered control surface
+        # cannot be connected. Keep unrelated personal computer-use plugins
+        # out of this child session so the model cannot mistake them for tools.
+        config.append(("mcp_servers.rpent.required", True))
+        config.append(("plugins.\"unified-computer-use@openai-bundled\".enabled", False))
+        # CUA is injected by the desktop plugin after base config is loaded;
+        # provide a disabled transport so this override remains valid even
+        # when it is absent from the user's config file.
+        config.append(("mcp_servers.cua_repl.url", "http://127.0.0.1:1/mcp/"))
+        for unrelated_server in ("cua_repl", "node_repl"):
+            if unrelated_server == "node_repl":
+                config.append(("mcp_servers.node_repl.command", "false"))
+            config.append((f"mcp_servers.{unrelated_server}.enabled", False))
     if base_url:
         normalized = base_url.rstrip("/")
         if not normalized.endswith("/v1"):
@@ -1164,6 +1190,10 @@ def _extract_text(value: Any) -> str:
         parts = [_extract_text(item) for item in value]
         return "\n".join(part for part in parts if part)
     return ""
+
+
+def _contains_chinese(text: str) -> bool:
+    return any("\u4e00" <= character <= "\u9fff" for character in text)
 
 
 def _payload_size(value: Any) -> int:

@@ -1,0 +1,38 @@
+# Luna ACT: 22-D state/velocity and 16-D arm+gripper actions.
+# The dedicated driver also retains legacy 22-D action compatibility.
+base_config: ../../../../../lerobot_vlahost/workflows/robot_interaction/deploy_config_chunk.yaml
+robot:
+  type: luna_http
+  id: luna_act
+  http_base_url: http://6.6.7.100:8011
+  # Smooth each new ACT chunk from measured joints into the policy trajectory.
+  # At 30 Hz, 20 frames span about 0.67 s; gripper commands are not blended.
+  chunk_blend_steps: 20
+  joint_names:
+    - Arm_L1_Joint
+    - Arm_L2_Joint
+    - Arm_L3_Joint
+    - Arm_L4_Joint
+    - Arm_L5_Joint
+    - Arm_L6_Joint
+    - Arm_L7_Joint
+    - Arm_R1_Joint
+    - Arm_R2_Joint
+    - Arm_R3_Joint
+    - Arm_R4_Joint
+    - Arm_R5_Joint
+    - Arm_R6_Joint
+    - Arm_R7_Joint
+    - Leg_J1_Joint
+    - Leg_J2_Joint
+    - Leg_J3_Joint
+    - Leg_J4_Joint
+    - Leg_J5_Joint
+    - Leg_J6_Joint
+    - gripper_L
+    - gripper_R
+inference:
+  include_velocity: true
+  n_action_steps: 30
+  chunk_interval_s: 1.0
+  return_to_initial_position: false

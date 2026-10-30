@@ -114,6 +114,47 @@ def test_dashboard_task_commands_validate_and_latest_unclaimed_request_wins(
     assert snapshot["control_error"] is None
 
 
+def test_dashboard_command_accepts_a_final_free_text_instruction(tmp_path: Path):
+    spec = {
+        **DASHBOARD_SPEC,
+        "task": {
+            "command": "/rpent-task",
+            "usage": "/rpent-task <task_id> <instruction>",
+            "fields": (
+                {"name": "task_id", "kind": "integer", "minimum": 1},
+                {"name": "instruction", "kind": "text"},
+            ),
+            "display": "task {task_id}: {instruction}",
+            "output_slug": "task_{task_id}",
+        },
+    }
+    state = DashboardState(output_dir=tmp_path, dashboard_spec=spec)
+    state.shared_services_ready()
+    state.submit_input("/rpent-task 4 去3号桌子拿蓝色方块去2号椅子")
+    claimed = state.wait_for_task(timeout=0)
+    assert claimed is not None
+    assert claimed.request == {
+        "task_id": 4,
+        "instruction": "去3号桌子拿蓝色方块去2号椅子",
+    }
+
+
+def test_identical_active_task_is_not_queued_as_a_second_motion(
+    tmp_path: Path,
+):
+    state = _ready_state(tmp_path)
+    first = _claim_started_task(state)
+
+    state.submit_input("/rpent-task pick 1")
+
+    snapshot = state.snapshot()
+    assert first.number == 1
+    assert state.task_replacement_requested is False
+    assert snapshot["pending_task"] is None
+    assert "identical active task ignored" in snapshot["interaction"]["control_feedback"][-1]
+    assert state.wait_for_task(timeout=0) is None
+
+
 def test_dashboard_task_replacement_seals_input_and_resets_only_unique_runtime(
     tmp_path: Path,
 ) -> None:

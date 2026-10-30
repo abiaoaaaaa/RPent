@@ -155,7 +155,10 @@ class ApiAgentLoop(Planner):
     ) -> PlannerResult:
         conversation_id = uuid4().hex
         adapter = _HarnessToolkit(
-            toolkit, dashboard_events=self.dashboard_events, no_images=self.no_images
+            toolkit,
+            dashboard_events=self.dashboard_events,
+            no_images=self.no_images,
+            interactive=self.interactive,
         )
         session = _Session(
             adapter, conversation_id, max_turns, interactive=self.interactive
@@ -298,17 +301,24 @@ class _HarnessToolkit(FunctionToolset):
         *,
         dashboard_events: DashboardEventSink,
         no_images: bool,
+        interactive: bool,
     ) -> None:
         super().__init__(id="rpent")
         self.toolkit = toolkit
         self.dashboard_events = dashboard_events
         self.no_images = no_images
+        self.interactive = interactive
         self.finish_result: dict[str, Any] | None = None
         self.tool_calls = 0
         self.messages: list[dict[str, Any]] = []
         self.stopping = threading.Event()
         self.validators: dict[str, Draft202012Validator] = {}
-        self.output_types: list[Any] = [str]
+        # Physical, non-interactive runs must finish through the registered
+        # ``finish`` tool.  A bare string is only a progress message; allowing
+        # it as an output type lets a model stop after saying what it plans to
+        # do, without ever issuing that action.  Terminal/Dashboard sessions
+        # keep string output so they remain usable as conversations.
+        self.output_types: list[Any] = [str] if self.interactive else []
         self.add_tool(Tool(self.read_image, takes_ctx=True, sequential=True))
         for declaration in toolkit.list_tools():
             spec = {

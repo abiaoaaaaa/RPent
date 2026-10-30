@@ -15,6 +15,7 @@
 """Dashboard startup memory requirements before shared robot services."""
 
 import argparse
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -24,6 +25,36 @@ from rpent.cli.main import _build_argparser
 from rpent.dashboard.server import DashboardServer
 from rpent.dashboard.state import DashboardState
 from rpent.memory import MemoryManager
+
+
+def test_luna_camera_layout_places_wrists_in_a_vertical_stack():
+    css_path = (
+        Path(dashboard.__file__).resolve().parents[1]
+        / "dashboard/static/dashboard.css"
+    )
+    css = css_path.read_text(encoding="utf-8")
+    assert "grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr)" in css
+    assert "grid-row: 1 / span 2" in css
+    assert "--camera-color: #0f9f76" in css
+    assert "--camera-color: #d97706" in css
+    assert "body { font-size: 17px; }" in css
+    assert ".composer textarea { font-size: 16px; }" in css
+    assert ".tool-evidence" in css
+    assert ".ev.text.stage-success" in css
+    assert ".ev.tool_result.tool-success" in css
+    root = Path(dashboard.__file__).resolve().parents[1] / "dashboard"
+    js = (root / "static/dashboard.js").read_text(encoding="utf-8")
+    html = (root / "index.html").read_text(encoding="utf-8")
+    assert "/api/live-camera-frame" in js
+    assert "window.setTimeout(tick, delay)" in js
+    assert "Math.min(\n      3000," in js
+    assert "details.open = true" in js
+    assert "中文推理摘要" in js
+    assert "dashboard_image_kind" in js
+    assert "阶段验证成功：" in js
+    assert "tool-success" in js
+    assert 'id="lunaCameraTop"' in html
+    assert '<canvas id="lunaCameraTop"' in html
 
 
 @pytest.mark.parametrize(

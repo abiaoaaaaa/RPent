@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VLAHost 只读监视器</title>
+  <link rel="stylesheet" href="/static/monitor.css" />
+</head>
+<body>
+  <header>
+    <div><h1>VLAHost 只读监视器</h1><p>最近 30 帧 · 不发送控制指令</p></div>
+    <div id="status" class="status stale">连接中…</div>
+  </header>
+  <main>
+    <section class="camera panel">
+      <div class="section-title"><span>当前 / 选中图像</span><span id="frameMeta">—</span></div>
+      <div class="camera-grid">
+        <figure><canvas id="top"></canvas><figcaption>top</figcaption></figure>
+        <figure><canvas id="left"></canvas><figcaption>wrist_L</figcaption></figure>
+        <figure><canvas id="right"></canvas><figcaption>wrist_R</figcaption></figure>
+      </div>
+      <div id="timeline" class="timeline" aria-label="最近30帧"></div>
+    </section>
+    <section class="telemetry panel">
+      <div class="section-title"><span>关节遥测</span><span id="sampleMeta">—</span></div>
+      <div class="controls"><label>曲线关节 <select id="jointSelect"></select></label><span id="endpoint"></span></div>
+      <canvas id="chart" height="220"></canvas>
+      <div class="table-wrap"><table><thead><tr><th>关节</th><th>位置 (rad/原值)</th><th>速度</th></tr></thead><tbody id="jointTable"></tbody></table></div>
+      <details><summary>末端、底盘、夹爪和控制模式</summary><pre id="extra">—</pre></details>
+    </section>
+  </main>
+  <script src="/static/monitor.js"></script>
+</body>
+</html>

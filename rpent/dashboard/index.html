@@ -82,6 +82,14 @@
     <div class="gutter gutter-v" id="gutterV" title="Drag to resize columns" data-i18n-title="resizeColumns"></div>
 
     <div class="col right">
+      <section id="lunaCameraPanel" class="luna-camera-panel" hidden>
+        <div class="panel-title"><span>三视角相机</span><span class="meta">仅监看</span></div>
+        <div class="luna-camera-grid">
+          <figure><canvas id="lunaCameraTop" aria-label="顶部相机"></canvas><figcaption>顶部</figcaption></figure>
+          <figure><canvas id="lunaCameraLeft" aria-label="左腕相机"></canvas><figcaption>左腕</figcaption></figure>
+          <figure><canvas id="lunaCameraRight" aria-label="右腕相机"></canvas><figcaption>右腕</figcaption></figure>
+        </div>
+      </section>
       <div class="framewrap">
         <div class="frame-tabs"></div>
         <img class="frame-media" id="frame-a" alt="" />

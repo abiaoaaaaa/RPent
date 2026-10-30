@@ -1,0 +1,123 @@
+# Full-body pose recorded while the robot was stationary and ready for the
+# clothes grasp.  Position arrays use the Luna 22-D ACT training order:
+# 14 arm joints, 6 body joints, then left/right gripper positions.
+schema_version: 1
+record_type: luna_clothes_prepare_joint_pose
+label: 抓取衣服准备姿态
+recorded_at: "2026-10-29T13:27:10.778244+08:00"
+source:
+  robot: luna
+  endpoint: http://6.6.7.100:8011
+  joint_feedback_topic: /tj/info/joint_feedback
+  eef_left_topic: /tj/info/eef_left
+  eef_right_topic: /tj/info/eef_right
+  gripper_left_feedback_topic: /tj/info/gripper_feedback_L
+  gripper_right_feedback_topic: /tj/info/gripper_feedback_R
+  joint_feedback_age_s: 0.013733402000070782
+  desired_state:
+    base_speed_zero: true
+    base_parking_mode: true
+    vla_eef_publisher_count: 0
+joint_names:
+  - Arm_L1_Joint
+  - Arm_L2_Joint
+  - Arm_L3_Joint
+  - Arm_L4_Joint
+  - Arm_L5_Joint
+  - Arm_L6_Joint
+  - Arm_L7_Joint
+  - Arm_R1_Joint
+  - Arm_R2_Joint
+  - Arm_R3_Joint
+  - Arm_R4_Joint
+  - Arm_R5_Joint
+  - Arm_R6_Joint
+  - Arm_R7_Joint
+  - Leg_J1_Joint
+  - Leg_J2_Joint
+  - Leg_J3_Joint
+  - Leg_J4_Joint
+  - Leg_J5_Joint
+  - Leg_J6_Joint
+  - gripper_L
+  - gripper_R
+position_22d:
+  - 1.1704078912734985
+  - -1.449824571609497
+  - -1.4159862995147705
+  - -1.6771137714385986
+  - -0.5305275321006775
+  - 0.4911949038505554
+  - 0.08522626757621765
+  - -1.2086830139160156
+  - -0.39450016617774963
+  - 1.3911463022232056
+  - -1.5948846340179443
+  - 0.3472493886947632
+  - 0.34688907861709595
+  - 1.0007810592651367
+  - 0.002051886636763811
+  - 0.40106385946273804
+  - -0.5986964702606201
+  - 0.19945432245731354
+  - 0.002775696339085698
+  - -0.0005723466165363789
+  - -0.00705718994140625
+  - 0.00438690185546875
+arm_positions_rad:
+  - 1.1704078912734985
+  - -1.449824571609497
+  - -1.4159862995147705
+  - -1.6771137714385986
+  - -0.5305275321006775
+  - 0.4911949038505554
+  - 0.08522626757621765
+  - -1.2086830139160156
+  - -0.39450016617774963
+  - 1.3911463022232056
+  - -1.5948846340179443
+  - 0.3472493886947632
+  - 0.34688907861709595
+  - 1.0007810592651367
+body_positions_rad:
+  - 0.002051886636763811
+  - 0.40106385946273804
+  - -0.5986964702606201
+  - 0.19945432245731354
+  - 0.002775696339085698
+  - -0.0005723466165363789
+head_positions_rad:
+  - -1.1984224101979635e-07
+  - -3.5952675148109847e-07
+  - 0.0
+gripper_positions:
+  left: -0.00705718994140625
+  right: 0.00438690185546875
+eef_pose:
+  frame_id: base_link
+  left:
+    position:
+      x: 0.4319163895209138
+      y: 0.16311422228590028
+      z: 1.0987986332378348
+    orientation:
+      x: -0.14328956250938477
+      y: 0.02399397379383056
+      z: -0.12899716075911535
+      w: 0.9809445055728543
+  right:
+    position:
+      x: 0.33892360739843574
+      y: -0.3872273386962394
+      z: 1.0937151316004512
+    orientation:
+      x: -0.32807715928266173
+      y: 0.23062590942048497
+      z: 0.3764233836336437
+      w: 0.8351541796068674
+freshness:
+  joint_feedback_age_s: 0.013733402000070782
+  eef_left_age_s: 0.013499640001100488
+  eef_right_age_s: 0.013366262000999996
+  gripper_left_feedback_age_s: 0.015180747001068085
+  gripper_right_feedback_age_s: 0.015047625000079279

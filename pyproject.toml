@@ -52,6 +52,7 @@ rpent = "rpent.cli.main:main"
 rpent-memory = "rpent.cli.memory:main"
 rpent-check-llm = "rpent.cli.check_llm:main"
 rpent-flywheel = "rpent.flywheel.cli:main"
+rpent-vlahost-monitor = "rpent.vlahost_monitor.server:main"
 
 [project.urls]
 Homepage = "https://github.com/RLinf/RPent"
@@ -265,6 +266,7 @@ include = ["rpent*", "robots", "robots.*"]
 exclude = ["tests*", "docs*", "examples*", "docker*", "toolkits*"]
 
 [tool.setuptools.package-data]
+rpent = ["vlahost_monitor/static/*"]
 "rpent.dashboard" = ["*.html", "static/*.css", "static/*.js"]
 "robots.yam" = ["config/*.yaml", "guides/*.md"]
 

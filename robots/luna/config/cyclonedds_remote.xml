@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RPent host 6.6.7.24 communicates with the Luna controller at 6.6.7.100. -->
+<CycloneDDS xmlns="https://cdds.io/config">
+  <Domain>
+    <General>
+      <Interfaces>
+        <NetworkInterface name="enp12s0"/>
+      </Interfaces>
+      <AllowMulticast>spdp</AllowMulticast>
+    </General>
+    <Discovery>
+      <Peers>
+        <Peer address="6.6.7.100"/>
+      </Peers>
+      <MaxAutoParticipantIndex>256</MaxAutoParticipantIndex>
+      <LeaseDuration>1 s</LeaseDuration>
+    </Discovery>
+    <SharedMemory>
+      <Enable>false</Enable>
+    </SharedMemory>
+  </Domain>
+</CycloneDDS>

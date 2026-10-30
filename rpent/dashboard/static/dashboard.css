@@ -1,19 +1,26 @@
   :root {
-    --bg: #f6f1e8; --panel: #fffdf8; --panel2: #efe7d8; --border: #d8cfbe;
-    --fg: #3b3934; --muted: #877f70; --accent: #2f6fd6;
-    --green: #2f8a3e; --red: #c8392f; --yellow: #b07a0a; --purple: #7a52c4;
-    --tool: #1d6fc5;
+    --bg: #eef3fb; --panel: #ffffff; --panel2: #e8f0fc; --border: #cbd8ea;
+    --fg: #172033; --muted: #66758c; --accent: #2563eb;
+    --green: #087f5b; --red: #c92a2a; --yellow: #b56a00; --purple: #7048c9;
+    --tool: #0b72d9;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    background: var(--bg); color: var(--fg);
+    background:
+      radial-gradient(circle at 8% 0%, rgba(99,102,241,.13), transparent 28rem),
+      radial-gradient(circle at 92% 8%, rgba(14,165,233,.12), transparent 26rem),
+      var(--bg);
+    color: var(--fg);
     font: 16px/1.6 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
     display: flex; flex-direction: column; height: 100vh; overflow: hidden;
   }
   header {
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    background: linear-gradient(105deg, #ffffff 0%, #f2f7ff 55%, #ecfbf7 100%);
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(90deg, #2563eb, #0ea5a4, #f59e0b) 1;
   }
   header h1 { font-size: 18px; margin: 0; font-weight: 600; letter-spacing: .3px; }
   header h1 .dot { color: var(--accent); }
@@ -58,7 +65,38 @@
 
   main { flex: 1; display: grid; grid-template-columns: var(--leftw, 1.4fr) 6px 1fr; gap: 0; min-height: 0; }
   .col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-  .col.right { display: grid; grid-template-rows: var(--frameh, 42vh) 6px 1fr; min-height: 0; }
+  .col.right { display: grid; grid-template-rows: auto var(--frameh, 42vh) 6px minmax(0, 1fr); min-height: 0; }
+  .luna-camera-panel {
+    background: linear-gradient(135deg, rgba(37,99,235,.07), rgba(14,165,164,.06));
+    border-bottom: 1px solid var(--border);
+  }
+  .luna-camera-grid {
+    display: grid; grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px 12px;
+  }
+  .luna-camera-grid figure {
+    --camera-color: #2563eb;
+    --camera-bg: rgba(219,234,254,.66);
+    margin: 0; min-width: 0; padding: 5px; border-radius: 9px;
+    background: var(--camera-bg); border: 1px solid var(--camera-color);
+    box-shadow: 0 3px 12px rgba(31,50,81,.08);
+  }
+  .luna-camera-grid figure:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; }
+  .luna-camera-grid figure:nth-child(2) {
+    grid-column: 2; grid-row: 1; --camera-color: #0f9f76; --camera-bg: rgba(209,250,229,.72);
+  }
+  .luna-camera-grid figure:nth-child(3) {
+    grid-column: 2; grid-row: 2; --camera-color: #d97706; --camera-bg: rgba(254,243,199,.72);
+  }
+  .luna-camera-grid canvas {
+    display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain;
+    background: #0f172a; border-radius: 6px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+  .luna-camera-grid figcaption {
+    color: var(--camera-color); font-size: 11px; font-weight: 700;
+    padding: 3px 3px 0;
+  }
 
   /* draggable splitters */
   .gutter {
@@ -147,9 +185,32 @@
   }
   .ev.tool_call { border-left: 3px solid var(--tool); }
   .ev.tool_result { border-left: 3px solid var(--muted); opacity: .85; }
+  .ev.tool_result.tool-success {
+    color: var(--green); border-color: #78c6a8;
+    border-left-color: var(--green); background: rgba(8,127,91,.08); opacity: 1;
+  }
+  .ev.tool_result.tool-success .tname,
+  .ev.tool_result.tool-success .args { color: var(--green); }
   .ev .tname { color: var(--accent); font-weight: 600; }
   .ev .tname.err { color: var(--red); }
   .ev .args { color: var(--muted); }
+  .ev.text.stage-success {
+    color: var(--green); font-weight: 650; padding: 7px 10px;
+    border-left: 3px solid var(--green); border-radius: 6px;
+    background: rgba(8,127,91,.08);
+  }
+  .tool-evidence {
+    margin: 8px 0 2px; padding: 6px; width: fit-content; max-width: 100%;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: rgba(255,255,255,.72);
+  }
+  .tool-evidence img {
+    display: block; width: auto; max-width: min(100%, 760px);
+    max-height: 420px; object-fit: contain; border-radius: 5px; background: #0f172a;
+  }
+  .tool-evidence figcaption {
+    padding-top: 4px; color: var(--muted); font-size: 12px;
+  }
 
   /* collapsible tool-call group */
   .toolgroup { margin: 6px 0; }
@@ -407,6 +468,38 @@
   }
 
   .empty { color: var(--muted); padding: 24px 14px; font-style: italic; font-size: 14px; }
+
+  /* Readability pass: keep dense controls usable on operator displays. */
+  body { font-size: 17px; }
+  header h1 { font-size: 20px; }
+  select { font-size: 16px; }
+  .badge { font-size: 13px; }
+  .runtime-item { font-size: 12px; }
+  .meta { font-size: 14px; }
+  .luna-camera-grid figcaption { font-size: 13px; }
+  .panel-title { font-size: 14px; }
+  .ev.turn { font-size: 15px; }
+  .markdown-table { font-size: 15px; }
+  .ev.thinking summary { font-size: 13px; }
+  .ev.thinking summary::before { font-size: 10px; }
+  .ev.meta { font-size: 14px; }
+  .ev.user::before { font-size: 12px; }
+  .ev.tool_call, .ev.tool_result, .tg-head { font-size: 15px; }
+  .composer textarea { font-size: 16px; }
+  .composer-hint, .composer-status { font-size: 13px; }
+  .pending-heading, .pending-message-meta { font-size: 12px; }
+  .pending-message-text { font-size: 15px; }
+  .withdraw-message { font-size: 12px; }
+  .frame-tabs button, .frame-cap { font-size: 14px; }
+  .primitive-panel > summary { font-size: 14px; }
+  .primitive-availability, .primitive-advanced > summary { font-size: 12px; }
+  .primitive-buttons button, .primitive-field label { font-size: 13px; }
+  .primitive-field input, .primitive-field select { font-size: 14px; }
+  #executePrimitive, .primitive-status { font-size: 13px; }
+  .step { font-size: 16px; }
+  .step .det { font-size: 14px; }
+  .step .el { font-size: 13px; }
+  .empty { font-size: 15px; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: #c9bea9; border-radius: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }

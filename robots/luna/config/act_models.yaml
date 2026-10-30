@@ -1,0 +1,13 @@
+# Color-specific 22-D observation / 16-D arm+gripper ACT checkpoints.
+# The Luna adapter holds the six body joints at their measured positions.
+red:
+  checkpoint: /home/xlb/data/models/act_luna_arm16_tplus2/red_100000
+  deployment_config: act_red.yaml
+blue:
+  checkpoint: /home/xlb/data/models/act_luna_arm16_tplus2/blue_100000
+  deployment_config: act_blue.yaml
+clothes:
+  # Use the latest complete checkpoint; update this entry after a newer
+  # checkpoint is validated locally.
+  checkpoint: /home/xlb/data/models/act_grab_clothes_head_wrists_v2/train_20261028_100k/checkpoints/040000/pretrained_model
+  deployment_config: act_clothes.yaml

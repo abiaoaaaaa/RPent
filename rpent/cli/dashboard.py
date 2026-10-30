@@ -98,9 +98,9 @@ def run_dashboard_session(
             "Dashboard task control cannot use --env-endpoint because each "
             "TaskRun requires a fresh owned env_server"
         )
-    if dashboard_spec.get("external_env", False) and not getattr(
-        args, "env_endpoint", None
-    ):
+    if dashboard_spec.get("external_env", False) and dashboard_spec.get(
+        "requires_env_endpoint", True
+    ) and not getattr(args, "env_endpoint", None):
         parser.error(
             "--env-endpoint is required for this external-environment Dashboard"
         )
@@ -127,6 +127,11 @@ def run_dashboard_session(
         planner=args.planner,
         model=args.model,
         base_url=args.base_url,
+        live_camera_snapshot_url=(
+            f"{getattr(args, 'luna_vlahost_url').rstrip('/')}/hil/snapshot"
+            if getattr(args, "luna_vlahost_url", None)
+            else None
+        ),
     )
     dashboard_url = dashboard_server.start()
     print(f"Dashboard: {dashboard_url}", flush=True)
@@ -199,6 +204,7 @@ def _run_dashboard_task(
     task_args = copy.copy(args)
     for name, value in claimed.request.items():
         setattr(task_args, name, value)
+    robot_spec.validate_args(task_args)
     if task_args.explore and not robot_spec.supports_exploration:
         raise ValueError(f"--explore is not supported for robot {robot_spec.name!r}")
     task_args.output_dir = str(claimed.output_dir)
